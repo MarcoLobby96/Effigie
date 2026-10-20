@@ -620,7 +620,11 @@ class App(tk.Tk):
         change.pack(side="right")
         self.src_detail = ttk.Label(self.zone_full, style="Drop.Muted.TLabel")
         self.src_detail.pack(anchor="w")
-        self.src_badge = tk.Label(self.zone_full, bg=drop, font=self.t.f["small"], anchor="w")
+        self.src_badge = tk.Label(self.zone_full, bg=drop, font=self.t.f["small"], anchor="w",
+                                  justify="left", wraplength=px(300))
+        # il voto delle foto può essere lungo: va a capo alla larghezza del riquadro
+        self.zone_full.bind("<Configure>", lambda e: self.src_badge.config(
+            wraplength=max(e.width - px(40), px(120))), add="+")
         self.src_badge.pack(anchor="w", pady=(px(4), 0))
         self.zone_empty.pack(fill="x")
 
@@ -1176,11 +1180,50 @@ class App(tk.Tk):
             self.src_badge.config(text=badge, fg=color)
             picks = [photos[i] for i in sorted({round(j * (n - 1) / 3) for j in range(4)})] if n else []
             self.load_thumbs(picks)
+            if n >= 3:
+                self.rate_source(photos)
         else:
             self.n_images = 80
             self.src_detail.config(text="Video")
             self.src_badge.config(text="", fg=MUTED)
             self.load_thumbs([], video=path)
+
+    def rate_source(self, photos):
+        """Voto delle foto da 1 a 10 (in un thread: qualche secondo), con i motivi nel
+        suggerimento del pallino."""
+        token = object()
+        self._rate_token = token
+        self.src_badge.config(text=self.src_badge.cget("text") + "  ·  valuto le foto…")
+
+        def job():
+            import extras
+            try:
+                r = extras.rate_photos(photos)
+            except Exception as e:                     # mai bloccare l'app per il voto
+                print("Voto delle foto non riuscito:", e, file=sys.stderr)
+                r = None
+            self.after(0, lambda: self.rated(token, r))
+        threading.Thread(target=job, daemon=True).start()
+
+    def rated(self, token, r):
+        if token is not getattr(self, "_rate_token", None):
+            return
+        if not r:
+            return self.src_badge.config(text=self.src_badge.cget("text").split("  ·  ")[0])
+        v = r["voto"]
+        word = "ottime" if v >= 9 else "buone" if v >= 7 else "così così" if v >= 5 else "scarse"
+        main = r["motivi"][0] if r["motivi"] else "nitide, ben esposte e sovrapposte"
+        self.src_badge.config(text=f"● Foto {v}/10, {word}: {main}",
+                              fg=OK if v >= 7 else WARN if v >= 4 else ERR)
+        tip = (f"Voto delle foto per la ricostruzione: {v}/10.\n" +
+               ("\n".join(f"• {m}" for m in r["motivi"]) if r["motivi"] else
+                "• Niente da segnalare.") +
+               "\n\nConta: numero di foto, risoluzione, nitidezza, esposizione, quanto si "
+               "sovrappongono e quanti dettagli riconoscibili hanno.")
+        if getattr(self, "badge_tip", None) is None:
+            self.badge_tip = ui.Tooltip(self.src_badge, tip, self.t)
+        else:
+            self.badge_tip.text = tip
 
     def load_thumbs(self, photos, video=None):
         size, radius = self.t.px(60), self.t.px(8)

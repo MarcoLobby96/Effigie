@@ -42,6 +42,69 @@ def _matches(a, b, orb, matcher):
     return sum(1 for p in pairs if len(p) == 2 and p[0].distance < 0.75 * p[1].distance)
 
 
+def rate_photos(files, sample=60):
+    """Voto da 1 a 10 delle foto per la fotogrammetria, prima di cominciare, con i motivi.
+    Guarda un campione (al massimo `sample` foto, ridotte): numero, risoluzione,
+    nitidezza, esposizione, sovrapposizione fra foto vicine e quanti punti riconoscibili
+    hanno (superfici lucide, nere o tutte uguali ne hanno pochi)."""
+    files = list(files)
+    n = len(files)
+    if n == 0:
+        return {"voto": 1, "motivi": ["nessuna foto"]}
+    pick = [files[round(i * (n - 1) / max(min(n, sample) - 1, 1))] for i in range(min(n, sample))]
+    from PIL import Image
+    sizes = []
+    for p in pick[:10]:
+        try:
+            with Image.open(p) as im:
+                sizes.append(min(im.size))
+        except OSError:
+            pass
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        stats = list(pool.map(_stats, pick))
+    sharp = np.array([s[0] for s in stats])
+    med = float(np.median(sharp))
+    blurry = float(np.mean(sharp < 0.3 * med))
+    badlight = float(np.mean([m < 35 or m > 225 or c > 0.35 for _, m, c, _ in stats]))
+    weak, points = 0.0, None
+    try:
+        import cv2
+        orb = cv2.ORB_create(1500)
+        matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
+        gray = [s[3] for s in stats]
+        points = float(np.median([len(orb.detect(g, None)) for g in gray]))
+        if len(gray) > 2:
+            # ogni foto con le due seguenti: i set fatti a più giri non sono in sequenza
+            # perfetta; il campione salta foto quando sono tante, quindi soglia più bassa
+            thr = 25 if n <= sample else 12
+            best = [max(_matches(gray[i], gray[j], orb, matcher)
+                        for j in (i + 1, i + 2) if j < len(gray)) for i in range(len(gray) - 1)]
+            weak = float(np.mean(np.array(best) < thr))
+    except ImportError:
+        pass
+    score, why = 10.0, []
+
+    def minus(points_off, reason):
+        nonlocal score
+        if points_off > 0.05:
+            score -= points_off
+            why.append((points_off, reason))
+    minus(4 if n < 10 else 2.5 if n < 20 else 1 if n < 40 else 0,
+          f"solo {n} foto (meglio 50-100)")
+    side = min(sizes) if sizes else 0
+    minus(2.5 if side < 800 else 1.5 if side < 1100 else 0.5 if side < 1500 else 0,
+          f"risoluzione bassa ({side} px sul lato corto)")
+    minus(min(3.0, 8 * blurry), f"{blurry:.0%} delle foto mosse o sfocate")
+    minus(min(3.0, 6 * badlight), f"{badlight:.0%} delle foto troppo buie o bruciate")
+    minus(min(2.5, 5 * max(0.0, weak - 0.15)), f"{weak:.0%} delle foto poco sovrapposte alle vicine")
+    if points is not None:
+        minus(3 if points < 150 else 1.5 if points < 400 else 0.5 if points < 700 else 0,
+              "pochi dettagli da agganciare (superficie lucida, scura o uniforme?)")
+    why.sort(key=lambda w: -w[0])
+    return {"voto": int(np.clip(round(score), 1, 10)), "motivi": [r for _, r in why],
+            "foto": n}
+
+
 def check_photos(img_dir, work):
     """Scarta le foto mosse o con esposizione sbagliata (solo se ne restano abbastanza) e
     segnala quelle che si sovrappongono poco con le vicine. Scrive qualita.json."""
@@ -90,8 +153,15 @@ def check_photos(img_dir, work):
     if len(weak) > 0.2 * len(files):
         bp.warn(f"{len(weak)} foto hanno poco in comune con le vicine: scatta più foto, "
                 "spostandoti meno tra uno scatto e l'altro.")
+    try:
+        rating = rate_photos(files)
+        print(f"Voto delle foto: {rating['voto']}/10"
+              + (f" ({'; '.join(rating['motivi'])})" if rating["motivi"] else ""))
+    except Exception as e:
+        print("Voto delle foto non riuscito:", e)
+        rating = None
     (Path(work) / "qualita.json").write_text(json.dumps(
-        {"foto": len(files), "scartate": {f.name: w for f, w in bad.items()
+        {"voto": rating, "foto": len(files), "scartate": {f.name: w for f, w in bad.items()
                                           if f.name in removed},
          "dubbie": {f.name: w for f, w in bad.items() if f.name not in removed},
          "poco_sovrapposte": weak}, indent=2, ensure_ascii=False))
