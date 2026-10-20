@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Effigie: installa e avvia",
+      "type": "shell",
+      "windows": {
+        "command": "py -3 scripts/bootstrap.py"
+      },
+      "linux": {
+        "command": "python3 scripts/bootstrap.py"
+      },
+      "osx": {
+        "command": "python3 scripts/bootstrap.py"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Effigie: solo interfaccia",
+      "type": "shell",
+      "windows": {
+        "command": ".venv\\Scripts\\python.exe src/app.py"
+      },
+      "linux": {
+        "command": ".venv/bin/python src/app.py"
+      },
+      "osx": {
+        "command": ".venv/bin/python src/app.py"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

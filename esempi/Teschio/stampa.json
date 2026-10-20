@@ -1,0 +1,24 @@
+{
+  "stampante": "Bambu Lab A1",
+  "impostazioni": {
+    "sparse_infill_pattern": "gyroid",
+    "wall_loops": "3",
+    "top_shell_layers": "5",
+    "seam_position": "back",
+    "ironing_type": "no ironing",
+    "layer_height": "0.16",
+    "sparse_infill_density": "12%",
+    "enable_support": "1",
+    "support_type": "tree(auto)",
+    "support_threshold_angle": "40",
+    "support_on_build_plate_only": "0",
+    "brim_type": "outer_only",
+    "brim_width": "4"
+  },
+  "motivi": {
+    "layer_height": "altezza 80 mm",
+    "sparse_infill_density": "volume 192 cm³",
+    "enable_support": "sporgenze 29 cm²",
+    "brim_type": "appoggio 1.9 cm² per 80 mm di altezza"
+  }
+}

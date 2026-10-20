@@ -1,0 +1,5 @@
+{
+  "task.allowAutomaticTasks": "on",
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "files.exclude": { ".venv": true, "**/__pycache__": true }
+}

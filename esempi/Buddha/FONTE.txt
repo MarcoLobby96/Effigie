@@ -1,0 +1,8 @@
+Foto: Buddha Dataset di AliceVision
+Simone Gasparini, Fabien Castan, Yann Lanthony (2017). Buddha Dataset (Version 1.0).
+Zenodo. https://doi.org/10.5281/zenodo.1203283
+https://github.com/alicevision/dataset_buddha
+
+Licenza: Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/).
+Le foto sono state ridimensionate; il modello 3D in questa cartella è stato ricavato
+da queste foto con Effigie.

@@ -1,0 +1,11 @@
+{
+  "name": "Buddha",
+  "src": "foto",
+  "mode": "images",
+  "created": "esempio",
+  "height": 88,
+  "quality": "alta",
+  "cut": 0.35,
+  "crop": 1.2,
+  "smooth": 0.0
+}

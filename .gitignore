@@ -1,0 +1,15 @@
+.venv/
+tools/
+progetti/
+config.json
+__pycache__/
+.pytest_cache/
+app_errori.log
+registro.txt
+lavoro*/
+lavoro*.log
+dist/
+
+# esempi con licenze che non permettono di ridistribuirli: solo in locale
+esempi/Cavallo/
+esempi/Volpe/

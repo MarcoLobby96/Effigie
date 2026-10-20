@@ -1,0 +1,8 @@
+Foto: "Photogrammetry Test Set: Skull - Cameramoves - Flash - No Background" di alansartlog
+https://gitlab.com/photogrammetry-test-sets/skull-cameramoves-flash-no-background
+Autore: alansartlog (https://alansartlog.com)
+Licenza: Creative Commons Attribuzione 4.0 Internazionale (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+Le foto sono state ridotte (lato lungo 1600 px). Il modello 3D è stato ricostruito da queste
+foto con Effigie.
