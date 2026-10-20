@@ -63,7 +63,7 @@ Esporta anche `STL`, `GLB` con i colori delle foto e `USDZ` per vedere il modell
 <p align="center">
   <img src="docs/volpe_colori.jpg" width="100%" alt="Volpe ricostruita con i colori delle foto">
 </p>
-<p align="center"><sub>Volpe impagliata appesa al muro, 50 fotogrammi da un video col telefono. La parete diventa un retro piatto, così si stampa sdraiata senza supporti.</sub></p>
+<p align="center"><sub>Volpe impagliata appesa al muro, 50 fotogrammi da un video col telefono. La parete diventa un retro piatto, che poggia sul piatto di stampa.</sub></p>
 
 ## Installazione
 
