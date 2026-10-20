@@ -37,9 +37,9 @@ Name: "it"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Messages]
 it.WelcomeLabel1=Benvenuto in Effigie
-it.WelcomeLabel2=Effigie trasforma le foto o un video di un oggetto in un modello 3D pronto da stampare: busti, statuine, ritratti.%n%nVerranno installati Effigie {#AppVersion} e tutto quello che serve (Python, COLMAP, OpenMVS, ffmpeg) con un esempio già pronto. Non servono diritti di amministratore.%n%nSpazio richiesto: circa 1,2 GB.
+it.WelcomeLabel2=Effigie trasforma le foto o un video di un oggetto in un modello 3D pronto da stampare: busti, statuine, ritratti.%n%nVerranno installati Effigie {#AppVersion} e tutto quello che serve (Python, COLMAP, OpenMVS, ffmpeg) con due esempi già pronti (Buddha e teschio). Non servono diritti di amministratore.%n%nSpazio richiesto: circa 1,2 GB.
 it.FinishedHeadingLabel=Effigie è pronto
-it.FinishedLabel=Effigie è stato installato.%n%nPer iniziare apri l'esempio del Buddha dal menu File, oppure trascina nella finestra le foto del tuo soggetto.
+it.FinishedLabel=Effigie è stato installato.%n%nPer iniziare apri un esempio dal menu File, oppure trascina nella finestra le foto del tuo soggetto.
 
 [Tasks]
 Name: "desktopicon"; Description: "Crea un'icona sul desktop"; GroupDescription: "Icone:"
