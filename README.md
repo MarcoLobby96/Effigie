@@ -62,7 +62,8 @@ Una volpe impagliata appesa al muro: 50 fotogrammi di un video fatto col telefon
 
 | Problema | Cosa fa Effigie |
 |---|---|
-| Foto mosse, buie o bruciate | Le scarta prima di partire, se ne restano abbastanza, e scrive il motivo in `qualita.json`. Avvisa se le foto si sovrappongono poco. Dai video prende i fotogrammi più nitidi. |
+| Foto adatte o no? | Appena scegli le foto dà un voto da 1 a 10 con i motivi: numero, risoluzione, nitidezza, esposizione, sovrapposizione, dettagli riconoscibili. Dopo l'allineamento dice quante foto si sono agganciate davvero. |
+| Foto mosse, buie o bruciate | Le scarta prima di partire, se ne restano abbastanza, e scrive il motivo in `qualita.json`. Dai video prende i fotogrammi più nitidi. |
 | Sfondo, pavimento, tavolo, parete | Trova i piani con RANSAC e ritaglia attorno al punto che le camere guardavano. Una parete diventa un retro piatto da appendere. |
 | Modello storto o sottosopra | La verticale viene dal pavimento o dalle camere; il davanti dal volto, se c'è, o dal lato lungo dell'oggetto. |
 | La "bolla" di Poisson e le membrane | Base tagliata al punto reale più basso, membrane lontane dai dati rimosse. |
@@ -110,6 +111,8 @@ Poi: trascina la cartella o il video nella finestra, scegli altezza e qualità, 
 
 - Solo Windows.
 - Le parti mai inquadrate (sotto, dietro un muro) vengono chiuse alla meglio. L'opzione sperimentale *Immagina le parti non viste (IA)* le fa riempire a TripoSR e lascia il resto com'è nelle foto.
+- Se le foto non si allineano, Effigie non inventa un modello di nascosto: con 20 foto o più chiede prima se usare l'IA, che ricostruisce una forma plausibile da una sola foto ma non una copia fedele.
+- Alcuni set non si allineano anche con foto nitide, per esempio con un teleobiettivo spinto su un piatto girevole. Il voto iniziale non può prevederlo tutto: il dato certo è quello dopo l'allineamento.
 - Le impostazioni di stampa sono tarate sull'A1. Il modello va bene per qualsiasi stampante, ma con le altre le impostazioni vanno ricontrollate.
 
 ## Crediti

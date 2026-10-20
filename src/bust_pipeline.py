@@ -564,6 +564,7 @@ def colmap_sfm(exe, work, single_camera, max_size):
                                 "--output_path", glob_dir], check=False)
         models += [(registered_count(p / "images.bin"), p) for p in glob_dir.iterdir()
                    if (p / "images.bin").is_file()]
+    record_alignment(work, max((m[0] for m in models), default=0), n_images)
     if not models or max(m[0] for m in models) < 5:
         sys.exit("COLMAP non è riuscito a ricostruire la scena: le immagini sono troppo poche "
                  f"o troppo diverse tra loro. {SHOOTING_TIP}")
@@ -1731,6 +1732,25 @@ def open_in_bambu(path, custom=None):
     print("Bambu Studio non trovato: apri a mano", path, "(oppure usa --bambu)")
 
 
+def record_alignment(work, n_reg, n_images):
+    """Quante foto COLMAP ha agganciato: il dato vero sulla qualità delle foto, dopo il
+    voto stimato prima di partire. Va in qualita.json e all'app (@@ALIGN)."""
+    f = work / "qualita.json"
+    try:
+        q = json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        q = {}
+    q["allineate"] = {"foto": int(n_reg), "totali": int(n_images)}
+    try:
+        f.write_text(json.dumps(q, indent=2, ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        pass
+    emit("ALIGN", int(n_reg), int(n_images))
+
+
+AI_AUTO_MAX = 20     # con meno foto l'IA parte da sola; con più, solo se l'utente la vuole
+
+
 def colmap_and_openmvs(a, work, state, max_size, res_level):
     if a.from_step <= 3:
         if not count_images(work / "images"):
@@ -1841,6 +1861,8 @@ def main(argv=None):
                          "sinistra come la vede chi guarda il davanti)")
     ap.add_argument("--threads", type=int, default=0,
                     help="core della CPU da usare (0 = tutti)")
+    ap.add_argument("--ai-if-fails", action="store_true",
+                    help="se le foto non si allineano usa l'IA senza chiedere")
     ap.add_argument("--ai-fill", action="store_true",
                     help="l'IA (TripoSR) riempie solo le parti che le foto non hanno visto")
     ap.add_argument("--no-texture", action="store_true",
@@ -1893,7 +1915,13 @@ def main(argv=None):
         try:
             colmap_and_openmvs(a, work, state, max_size, res_level)
         except SystemExit as e:
-            if a.from_step > 3 or not count_images(work / "images") or not ai_available():
+            n = count_images(work / "images")
+            if a.from_step > 3 or not n or not ai_available():
+                raise
+            if n >= AI_AUTO_MAX and not a.ai_if_fails:
+                # tante foto: chi le ha scattate vuole il suo oggetto, non una forma
+                # inventata. L'app chiede prima di usare l'IA.
+                emit("NEEDAI")
                 raise
             warn(f"{e} Provo con l'IA, che immagina le parti non viste.")
             use_ai = True
@@ -1919,6 +1947,11 @@ def main(argv=None):
         warn("La ricostruzione fotografica è venuta incompleta (soggetto che si muove, "
              "superficie senza dettagli o foto non agganciate): rifai le foto con più "
              "luce, girando lentamente attorno al soggetto fermo.")
+    elif not use_ai and a.from_step <= 4 and count_images(work / "images") >= AI_AUTO_MAX             and not a.ai_if_fails and looks_broken(work):
+        warn("La ricostruzione fotografica è venuta incompleta (soggetto che si muove, "
+             "superficie senza dettagli o foto non agganciate). L'IA può immaginare la forma "
+             "da una foto, ma sarà inventata: te lo chiedo prima.")
+        emit("NEEDAI")
     elif not use_ai and a.from_step <= 4 and count_images(work / "images") and looks_broken(work):
         warn("La ricostruzione fotografica è venuta incompleta (soggetto che si muove, "
              "superficie senza dettagli o foto non agganciate): provo con l'IA.")

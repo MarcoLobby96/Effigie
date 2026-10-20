@@ -24,7 +24,8 @@ import numpy as np
 
 import ui_kit as ui
 from monitor import Monitor, gb
-from bust_pipeline import IMAGE_EXTS, clean_path, latest_input, open_in_bambu, video_duration
+from bust_pipeline import (IMAGE_EXTS, ai_available, clean_path, latest_input, open_in_bambu,
+                           video_duration)
 from ui_kit import ACCENT, BG, CARD, ERR, FAINT, FG, FIELD, LINE, MUTED, OK, SIDE, WARN
 from viewer3d import Viewer, has_colors, model_file
 
@@ -1509,7 +1510,7 @@ class App(tk.Tk):
             return
         self.start(5, quiet=True)
 
-    def start(self, from_step, quiet=False):
+    def start(self, from_step, quiet=False, ai=None):
         try:
             height, cut = self.height_mm.get(), self.cut.get()
             crop, smooth, fps = self.crop.get(), self.smooth.get(), self.fps.get()
@@ -1527,7 +1528,7 @@ class App(tk.Tk):
             self.orient_seq = ""                       # nuovo modello: orientamento automatico
             self.proj_label.set(project_name(self.work))
             self.save_project({"new": True})
-        elif not self.work or not latest_input(self.work):
+        elif not self.work or (not latest_input(self.work) and not ai):
             if not quiet:
                 messagebox.showerror("Niente da rifinire", "Prima crea il modello.")
             return
@@ -1537,7 +1538,8 @@ class App(tk.Tk):
         self.cfg["last_project"] = str(self.work)
         self.save_cfg()
         cmd = build_cmd(mode, str(src), self.work, height, cut, self.quality.get(), from_step,
-                        self.bambu.get(), crop, smooth, self.ai.get() and from_step == 1,
+                        self.bambu.get(), crop, smooth,
+                        (self.ai.get() and from_step == 1) if ai is None else ai,
                         self.orient_seq, 0.0 if self.fps_auto.get() else fps,
                         mirror=self.mirror.get(), threads=self.threads(),
                         colors=self.want_colors.get())
@@ -1549,6 +1551,7 @@ class App(tk.Tk):
         self.stage_key, self.stage_label = "", "Avvio" if from_step == 1 else "Aggiorno il modello"
         self.final = None
         self.last_warning = self.last_error = None
+        self.need_ai = False
         self.set_running(True)
         if from_step == 1:
             self.viewer.clear("Sto creando il modello…\nI dettagli sono nella scheda «Registro».")
@@ -1619,6 +1622,18 @@ class App(tk.Tk):
             self.append_log(f"ATTENZIONE: {msg}\n", "warn")
             if self.run_log:
                 self.run_log.write(f"ATTENZIONE: {msg}\n")
+        elif line.startswith("@@ALIGN"):
+            try:
+                n_reg, n = map(int, line.split()[1:3])
+            except ValueError:
+                return
+            ok = n_reg >= 0.8 * n
+            self.append_log(f"Foto allineate: {n_reg} su {n}\n", None if ok else "warn")
+            base = self.src_badge.cget("text").split("  ·  allineate")[0]
+            self.src_badge.config(text=f"{base}  ·  allineate {n_reg}/{n} {'✓' if ok else '✗'}",
+                                  fg=OK if ok else WARN if n_reg >= 0.5 * n else ERR)
+        elif line.startswith("@@NEEDAI"):
+            self.need_ai = True
         elif line.startswith("@@DONE"):
             self.final = line[len("@@DONE"):].strip() or None
         elif not line.startswith("@@"):
@@ -1693,9 +1708,28 @@ class App(tk.Tk):
                 self.tab.set("log")
                 self.show_tab()
         self.update_run_button()
+        if getattr(self, "need_ai", False) and self.run_step == 1:
+            self.need_ai = False
+            self.after(200, self.offer_ai)
         if self.auto_pending:
             self.auto_pending = False
             self.run_auto()
+
+    def offer_ai(self):
+        """Le foto (tante) non si sono allineate: l'IA si usa solo se l'utente lo vuole."""
+        tips = ("Di solito succede con soggetti lucidi, neri o tutti uguali, foto troppo "
+                "distanti tra loro, teleobiettivi o soggetto che si muove. Rifare le foto "
+                "girando piano attorno al soggetto è la soluzione migliore.")
+        if not ai_available():
+            return messagebox.showwarning("Foto non allineate",
+                                          f"La ricostruzione dalle foto non è riuscita.\n\n{tips}")
+        if messagebox.askyesno(
+                "Foto non allineate",
+                "La ricostruzione dalle foto non è riuscita o è incompleta.\n\n"
+                f"{tips}\n\nVuoi che l'IA immagini la forma partendo da una sola foto? "
+                "Il risultato sarà inventato: somiglierà al soggetto, ma non sarà una copia "
+                "fedele."):
+            self.start(4, ai=True)
 
     def notify(self):
         if self.focus_displayof() is None:            # finestra in secondo piano
