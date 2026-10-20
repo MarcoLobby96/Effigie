@@ -134,3 +134,5 @@ Il teschio di `esempi/Teschio` è il set [Skull - Cameramoves - Flash - No Backg
 ## Autore
 
 Marco Lo Bartolo
+
+© 2026 Marco Lo Bartolo. Tutti i diritti riservati: il codice è visibile, ma non può essere riutilizzato o ridistribuito senza permesso. I componenti di terze parti restano sotto le proprie licenze, raccolte in [`licenze/`](licenze).
